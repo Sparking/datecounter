@@ -32,7 +32,7 @@
 #include "version.h"
 #define IS(X) (strcmp(X,argv[i]) == 0)//idea is from the file luac.c of lua5.2.3
 
-int getfirst(void)
+static int getfirst(void)
 {
     int ch;
     ch = getchar();

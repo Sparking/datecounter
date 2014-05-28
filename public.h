@@ -1,6 +1,6 @@
 /* Project:Date Counter
  * Name:counter.h
- * Author:Liu Jiaying
+ * Author:Sparking
  * Built time:2014-4-6 19:36
  */
 

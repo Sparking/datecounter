@@ -30,7 +30,26 @@
 #include <time.h>
 #include "public.h"
 #include "version.h"
-#define IS(X) (strcmp(X,argv[i]) == 0)//idea is from the file luac.c of lua5.2.3
+#define IS(X) (isargv(X,argv[i]))
+
+static bool isargv( const char *stringA, const char *stringB)
+/* This function aims to compare 
+ * two strings.I don't use strcmp()
+ * to make program simple and light.
+ */
+{
+    int countA = 0, countB = 0;
+    while( *( stringA + countA))
+        countA ++;
+    while( *( stringB + countB))
+        countB ++;
+    if( countA != countB)
+        return false;
+    while( *stringA )
+        if( *stringA ++ != *stringB++)
+            return false;
+    return true;
+}
 
 static int getfirst(void)
 /* This function will get the 

@@ -38,6 +38,7 @@ static bool isargv( const char *stringA, const char *stringB)
  * to make program simple and light.
  */
 {
+    /*
     int countA = 0, countB = 0;
     while( *( stringA + countA))
         countA ++;
@@ -45,9 +46,12 @@ static bool isargv( const char *stringA, const char *stringB)
         countB ++;
     if( countA != countB)
         return false;
+    */
     while( *stringA )
         if( *stringA ++ != *stringB++)
             return false;
+    if( *stringB)
+        return false;
     return true;
 }
 

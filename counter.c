@@ -68,6 +68,8 @@ date_t counter( struct date *d)   /* 接受一个储存两个完整日期的结�
 
         if( spec_year(d->year[0]))   /*若年份是否为闰年，二月份改为29天，否则为28天 */
             month_D[1] = 29;
+        else
+            month_D[1] = 28;
         for( i = d->month[0] - 1; i < 12;)
             sum += month_D[i++];
         sum -= d->day[0];

@@ -28,7 +28,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#include "public.h"
+#include "date_counter.h"
 #include "version.h"
 #define IS(X) (isargv(X,argv[i]))
 
@@ -64,9 +64,9 @@ static int getfirst(void)
 int main(int argc, char *argv[])
 {
     int ch;
-    short_t i;
-    date_t sum;
-    date_t days;
+    uint32_t sum;
+    uint32_t days;
+    uint16_t i;
 
     bool need_help   = false;
     bool show_ver    = false;
@@ -74,157 +74,115 @@ int main(int argc, char *argv[])
     bool has_second  = false;
     bool convert_yes = false;
 
-    struct date d;
-
+    struct date d[2];
     time_t ltime;
     struct tm *today;
-    time( &ltime);
-    today = localtime( &ltime);
 
-    if( argc == 1)
-    {
-        fprintf( stdout, "There two models for use:\n"
+    time(&ltime);
+    today = localtime(&ltime);
+
+    if (argc == 1) {
+        fprintf(stdout, "There two models for use:\n"
                 "a. give a date and an integer as days to compute a new date\n"
                 "b. give two dates to count the days between dates\n"
                 "q. that means quit.\nEnter your choice:");
-        while((ch = getfirst()) != 'q')
-        {
-           if(ch == 'a')
-           {
-                fprintf( stdout,  "Enter the date:");
-                if( scanf("%"date_s"%"date_s"%"date_s, &d.year[0], &d.month[0], &d.day[0])
-                     != 3)
-                {
-                     fprintf(stderr, "Wrong format!!!\n");
-                     exit(EXIT_FAILURE);
+        while ((ch = getfirst()) != 'q') {
+           if (ch == 'a') {
+                fprintf(stdout,  "Enter the date:");
+                if (scanf("%hu%hu%hu", &d[0].year, &d[0].month, &d[0].day) != 3) {
+                    fprintf(stderr, "Wrong format!!!\n");
+                    exit(EXIT_FAILURE);
                 }
                 fprintf(stdout, "Enter the days:");
-                if( scanf( "%"date_s, &days) != 1)
-                {
+                if (scanf("%u", &days) != 1) {
                      fprintf(stderr, "Wrong format!!!\n");
                      exit(EXIT_FAILURE);
                 }
-                conversion( &d, days);
-                fprintf( stdout, "New date is %"date_p" %"date_p" %"date_p"\n", d.year[1], d.month[1], d.day[1]);
-           }
-           else if( ch == 'b')
-           {
-               for (i = 0; i < 2 ; i++)
-	       {
-	           if (i == 0)
-	               printf("Please input the first date:");
-	           else
-	               printf("Please input the second date:");
-	           if( scanf("%"date_s"%"date_s"%"date_s, &d.year[i], &d.month[i], &d.day[i])
-                        != 3)
-                   {
-                       fprintf( stderr, "Wrong input!!!\n");
-                       exit(EXIT_FAILURE);
-                   }
+                date_counter_compute_date(&d[1], &d[0], days);
+                fprintf(stdout, "New date is %hu %hu %hu\n", d[1].year, (uint16_t)d[1].month, (uint16_t)d[1].day);
+           } else if (ch == 'b') {
+                for (i = 0; i < 2 ; i++) {
+	                if (i == 0)
+	                    printf("Please input the first date:");
+	                else
+	                    printf("Please input the second date:");
+	                if( scanf("%hu%hu%hu", &d[i].year, &d[i].month, &d[i].day) != 3) {
+                        fprintf(stderr, "Wrong input!!!\n");
+                        exit(EXIT_FAILURE);
+                    }
                }
-               sum = counter( &d);
-               fprintf( stdout, "The days between two dates are %"date_p".\n", sum);
-           }
-           else
-           {
+               sum = date_counter_compute_days(&d[0], &d[1]);
+               fprintf(stdout, "The days between two dates are %u.\n", sum);
+           } else {
                fprintf(stderr, "recognize only a, b and q.\n");
            }
-           fprintf( stdout, "Enter your choice again:");
+           fprintf(stdout, "Enter your choice again:");
         }
-    }
-    else
-    {
-        for(i = 1; i < argc ; i++)
-        {
-            if(IS("-"))
-            {
+    } else {
+        for (i = 1; i < argc ; i++) {
+            if (IS("-")) {
             	fprintf(stderr, "\"%s\" is invaild\n", argv[i]);
             	exit(EXIT_FAILURE);
-            }
-            else if(IS("-h") || IS("--help"))
+            } else if (IS("-h") || IS("--help")) {
                 need_help = true;
-            else if(IS("-v") || IS("--version"))
+            } else if (IS("-v") || IS("--version")) {
             	show_ver = true;
-            else if(IS("-f") || IS("--from"))
-            {
-            	if( argc >= i + 3)
-            	{
-            	   d.year[0] = atoi( argv[++i]);
-            	   d.month[0] = atoi( argv[++i]);
-            	   d.day[0] = atoi( argv[++i]);
+            } else if (IS("-f") || IS("--from")) {
+            	if (argc >= i + 3){
+            	   d[0].year = atoi(argv[++i]);
+            	   d[0].month = atoi(argv[++i]);
+            	   d[0].day = atoi(argv[++i]);
             	   has_first = true;
+            	} else {
+            	    fprintf(stderr, "The option %s has too few arguments.\n", argv[i]);
+            	    exit(EXIT_FAILURE);
             	}
-            	else
-            	{
-            	    fprintf( stderr, "The option %s has too few arguments.\n", argv[i]);
-            	    exit( EXIT_FAILURE);
-            	}
-            }
-            else if(IS("-t") || IS("--to"))
-            {
-            	if( argc >= i + 3)
-                {
-            	    d.year[1] = atoi( argv[++i]);
-            	    d.month[1] = atoi( argv[++i]);
-            	    d.day[1] = atoi(argv[++i]);
+            } else if (IS("-t") || IS("--to")) {
+            	if (argc >= i + 3) {
+            	    d[1].year = atoi(argv[++i]);
+            	    d[1].month = atoi(argv[++i]);
+            	    d[1].day = atoi(argv[++i]);
             	    has_second = true;
+                } else {
+            	    fprintf(stderr, "The option %s has too few arguments.\n", argv[i]);
+            	    exit(EXIT_FAILURE);
                 }
-                else
-                {
-            	    fprintf( stderr, "The option %s has too few arguments.\n", argv[i]);
-            	    exit( EXIT_FAILURE);
-                }
-            }
-            else if(IS("-a") || IS("--add"))
-            {
-                if( argc >= i + 1)
-                {
-                     days = atoi( argv[++i]);
+            } else if (IS("-a") || IS("--add")) {
+                if( argc >= i + 1) {
+                     days = atoi(argv[++i]);
                      convert_yes = true;
+                } else {
+                    exit(EXIT_FAILURE);
                 }
-                else
-                {
-                    exit( EXIT_FAILURE);
-                }
-            }
-            else
-            {
+            } else {
             	fprintf(stderr, "unrecognized option \"%s\"\n", argv[i]);
                 fprintf(stderr, "usage: %s [options]\n%s", argv[0], HELP);
-            	exit( EXIT_FAILURE);
+            	exit(EXIT_FAILURE);
             }
         }
-        if( !has_first)
-        {
-            d.year[0] = ( date_t) 1900+today->tm_year;
-            d.month[0] = ( date_t) today->tm_mon + 1;
-            d.day[0] = ( date_t) today->tm_mday;
+        if (!has_first) {
+            d[0].year = (uint16_t)1900+today->tm_year;
+            d[0].month = (uint8_t)today->tm_mon + 1;
+            d[0].day = (uint8_t)today->tm_mday;
         }
-        if( need_help)
-        {
-            fprintf( stdout, "usage: %s [options]\n%s\n", argv[0], HELP);
-            exit( EXIT_SUCCESS);
-        }
-        else if( show_ver)
-        {
+
+        if (need_help) {
+            fprintf(stdout, "usage: %s [options]\n%s\n", argv[0], HELP);
+            exit(EXIT_SUCCESS);
+        } else if (show_ver) {
             puts( PRGNAME"  "VERSION);
             fprintf( stdout, "Built by %s.\n", AUTHORS);
-            exit( EXIT_SUCCESS);
+            exit(EXIT_SUCCESS);
+        } else if (has_second && !convert_yes) {
+            sum = date_counter_compute_days(d, d + 1);
+            fprintf(stdout,"%u", sum);
+            exit(EXIT_SUCCESS);
         }
-        else if( has_second && !convert_yes)
-        {
-            sum = counter( &d);
-            fprintf( stdout,"%"date_p, sum);
-            exit( EXIT_SUCCESS);
-        }
-        else if( convert_yes && !has_second)
-        {
-            conversion( &d, days);
-            fprintf( stdout, "%"date_p" %"date_p" %"date_p"\n", d.year[1], d.month[1], d.day[1]);
-            exit( EXIT_SUCCESS);
-        }
-        else
-        {
+        else if( convert_yes && !has_second){
+            date_counter_compute_date(&d[1], &d[0], days);
+            fprintf(stdout, "%hu-%hu-%hu\n", d[1].year, (uint16_t)d[1].month, (uint16_t)d[1].day);
+            exit(EXIT_SUCCESS);
+        } else {
             fprintf( stderr, "Invaild operation!\n");
             exit( EXIT_FAILURE);
         }

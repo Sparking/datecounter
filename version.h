@@ -13,6 +13,6 @@
 #define VERSION VER"."VERSION_MAJ"."VERSION_MIN
 #define PRGNAME "Date Counter"
 #define AUTHORS "Sparking"
-#define HELP "Available options:\n  -h,--help        show help\n  -v,--version     show version information\n  -a,--add         work out the date by days\n  -f,--from  date  with the first date following (format like 2014 3 1)\n  -t,--to  date    whith the second date following (format like 2014 3 1)\n"PRGNAME
+#define HELP "Available options:\n  -h,--help        show help\n  -v,--version     show version information\n  -a,--add         work out the date by days\n  -f,--from  date  with the first date following (format like 2014 3 1)\n  -t,--to  date    whith the second date following (format like 2014 3 1)\n  --config cfg     use configure file\n"PRGNAME
 
 #endif

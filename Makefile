@@ -1,9 +1,9 @@
 CC     = gcc
-CPPFLAGS = -Wall -std=c99
+CPPFLAGS = -Wall -Werror -std=gnu99
 CFLAGS = -O2
 RM     = rm -f
 
-ALL_C= counter.c main.c
+ALL_C= counter.c main.c iniparser.c
 ALL_O= $(patsubst %.c, %.o, $(ALL_C))
 ALL_D= $(patsubst %.c, %.d, $(ALL_C))
 ALL_T= datecnt

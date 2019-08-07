@@ -27,16 +27,29 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <time.h>
+#include "ini.h"
 #include "date_counter.h"
 #include "version.h"
 #define IS(X) (isargv(X,argv[i]))
 
-static bool isargv( const char *stringA, const char *stringB)
+static int scanf_to_date(struct date *d)
+{
+    unsigned short a, b, c;
+    int ret;
+
+    ret = scanf("%hu%hu%hu", &a, &b, &c);
+    d->year = (uint16_t)a;
+    d->month = (uint8_t)b;
+    d->day = (uint8_t)c;
+
+    return ret;
+}
+
 /* This function aims to compare
  * two strings.I don't use strcmp()
  * to make program simple and light.
  */
+static bool isargv( const char *stringA, const char *stringB)
 {
     while( *stringA )
         if( *stringA ++ != *stringB++)
@@ -46,11 +59,11 @@ static bool isargv( const char *stringA, const char *stringB)
     return true;
 }
 
-static int getfirst(void)
 /* This function will get the
  * first character of one-line
  * input and will return it.
  */
+static int getfirst(void)
 {
     int ch;
     ch = getchar();
@@ -61,25 +74,52 @@ static int getfirst(void)
     return ch;
 }
 
+static int date_counter_operate_file(const char *file)
+{
+    INI_CONFIG *config;
+    struct date d[2];
+    const char *data[2];
+
+    config = ini_config_create(file);
+    if (config == NULL)
+        return EXIT_FAILURE;
+
+    data[0] = ini_config_get(config, NULL, "from-date", NULL);
+    data[1] = ini_config_get(config, NULL, "to-date", NULL);
+    ini_config_release(config);
+    if (data[0] == NULL && data[1] == NULL) {
+        return EXIT_FAILURE;
+    } else if (data[0] == NULL) {
+        date_counter_get_current_date(d);
+        date_counter_string_to_date(data[1], d + 1);
+    } else if (data[1] == NULL) {
+        date_counter_string_to_date(data[0], d);
+        date_counter_get_current_date(d + 1);
+    } else {
+        date_counter_string_to_date(data[0], d);
+        date_counter_string_to_date(data[1], d + 1);
+    }
+    printf("%u", date_counter_compute_days(d, d + 1));
+    fflush(stdout);
+
+    return 0;
+}
+
 int main(int argc, char *argv[])
 {
     int ch;
     uint32_t sum;
     uint32_t days;
     uint16_t i;
+    struct date d[2];
+    char *config_file;
 
     bool need_help   = false;
     bool show_ver    = false;
     bool has_first   = false;
     bool has_second  = false;
     bool convert_yes = false;
-
-    struct date d[2];
-    time_t ltime;
-    struct tm *today;
-
-    time(&ltime);
-    today = localtime(&ltime);
+    bool use_config  = false;
 
     if (argc == 1) {
         fprintf(stdout, "There two models for use:\n"
@@ -89,7 +129,7 @@ int main(int argc, char *argv[])
         while ((ch = getfirst()) != 'q') {
            if (ch == 'a') {
                 fprintf(stdout,  "Enter the date:");
-                if (scanf("%hu%hu%hu", &d[0].year, &d[0].month, &d[0].day) != 3) {
+                if (scanf_to_date(&d[0]) != 3) {
                     fprintf(stderr, "Wrong format!!!\n");
                     exit(EXIT_FAILURE);
                 }
@@ -106,7 +146,7 @@ int main(int argc, char *argv[])
 	                    printf("Please input the first date:");
 	                else
 	                    printf("Please input the second date:");
-	                if( scanf("%hu%hu%hu", &d[i].year, &d[i].month, &d[i].day) != 3) {
+	                if (scanf_to_date(&d[i]) != 3) {
                         fprintf(stderr, "Wrong input!!!\n");
                         exit(EXIT_FAILURE);
                     }
@@ -134,8 +174,7 @@ int main(int argc, char *argv[])
             	   d[0].day = atoi(argv[++i]);
             	   has_first = true;
             	} else {
-            	    fprintf(stderr, "The option %s has too few arguments.\n", argv[i]);
-            	    exit(EXIT_FAILURE);
+                    goto error_param;
             	}
             } else if (IS("-t") || IS("--to")) {
             	if (argc >= i + 3) {
@@ -144,26 +183,31 @@ int main(int argc, char *argv[])
             	    d[1].day = atoi(argv[++i]);
             	    has_second = true;
                 } else {
-            	    fprintf(stderr, "The option %s has too few arguments.\n", argv[i]);
-            	    exit(EXIT_FAILURE);
+                    goto error_param;
                 }
             } else if (IS("-a") || IS("--add")) {
                 if( argc >= i + 1) {
-                     days = atoi(argv[++i]);
-                     convert_yes = true;
+                    days = atoi(argv[++i]);
+                    convert_yes = true;
                 } else {
-                    exit(EXIT_FAILURE);
+                    goto error_param;
+                }
+            } else if (IS("--config")) {
+                if (argc >= i + 1) {
+                    config_file = argv[++i];
+                    use_config = true;
+                } else {
+                    goto error_param;
                 }
             } else {
+error_param:
             	fprintf(stderr, "unrecognized option \"%s\"\n", argv[i]);
                 fprintf(stderr, "usage: %s [options]\n%s", argv[0], HELP);
             	exit(EXIT_FAILURE);
             }
         }
-        if (!has_first) {
-            d[0].year = (uint16_t)1900+today->tm_year;
-            d[0].month = (uint8_t)today->tm_mon + 1;
-            d[0].day = (uint8_t)today->tm_mday;
+        if (!has_first && !use_config) {
+            date_counter_get_current_date(d);
         }
 
         if (need_help) {
@@ -173,6 +217,8 @@ int main(int argc, char *argv[])
             puts( PRGNAME"  "VERSION);
             fprintf( stdout, "Built by %s.\n", AUTHORS);
             exit(EXIT_SUCCESS);
+        } else if (use_config) {
+            return date_counter_operate_file(config_file);
         } else if (has_second && !convert_yes) {
             sum = date_counter_compute_days(d, d + 1);
             fprintf(stdout,"%u", sum);

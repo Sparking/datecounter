@@ -7,6 +7,7 @@
  *     conversion()函数的作用————给定一个日期，再给定一个时间（多少天），
  *         函数将算出与该日期相差指定天数的日期（在该日期之后）。
  */
+#include <time.h>
 #include <string.h>
 #include "date_counter.h"
 
@@ -21,6 +22,20 @@ static uint8_t __month_days[12] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 3
         a = b; \
         b = temp; \
     } while(0)
+
+void date_counter_get_current_date(struct date *restrict d)
+{
+    if (d != NULL) {
+        time_t ltime;
+        struct tm *today;
+
+        time(&ltime);
+        today = localtime(&ltime);
+        d->year = (uint16_t)1900 + today->tm_year;
+        d->month = (uint8_t)today->tm_mon + 1;
+        d->day = (uint8_t)today->tm_mday;
+    }
+}
 
 uint32_t date_counter_compute_days(const struct date *restrict date_a,
     const struct date *restrict date_b)
